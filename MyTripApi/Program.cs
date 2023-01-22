@@ -1,7 +1,10 @@
 
 
 using Microsoft.EntityFrameworkCore;
+using MyTripApi;
 using MyTripApi.Data;
+using MyTripApi.Repository;
+using MyTripApi.Repository.IRepository;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +16,10 @@ builder.Services.AddDbContext<MyTripDbContext>(option =>
 {
     option.UseNpgsql(builder.Configuration.GetConnectionString("DefaultPostgreSQLConnection"));
 });
+
+builder.Services.AddScoped<ITripRepository, TripRepository>();
+
+builder.Services.AddAutoMapper(typeof(MappingConfig));
 
 builder.Services.AddControllers(option => { 
     //option.ReturnHttpNotAcceptable=true;

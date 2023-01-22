@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace MyTripApi.Models.Dto
+namespace MyTripApi.Models.Dto.Trip
 {
     public class TripDTO
     {

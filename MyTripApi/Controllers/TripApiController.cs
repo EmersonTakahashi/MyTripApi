@@ -1,10 +1,14 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using MyTripApi.Data;
 using MyTripApi.Models;
-using MyTripApi.Models.Dto;
+using MyTripApi.Models.Dto.Trip;
+using MyTripApi.Repository;
+using MyTripApi.Repository.IRepository;
 
 namespace MyTripApi.Controllers
 {
@@ -13,25 +17,28 @@ namespace MyTripApi.Controllers
     public class TripApiController : ControllerBase
     {
         private readonly ILogger<TripApiController> _logger;
-        private readonly MyTripDbContext _dbContext;
+        private readonly ITripRepository _tripRepository;
+        private readonly IMapper _mapper;
 
-        public TripApiController(ILogger<TripApiController> logger, MyTripDbContext dbContext)
+        public TripApiController(ILogger<TripApiController> logger, ITripRepository tripRepository, IMapper mapper)
         {
             _logger = logger;
-            _dbContext = dbContext;
+            _tripRepository = tripRepository;
+            _mapper = mapper;
         }
 
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult<IEnumerable<TripDTO>> GetTrips()
+        public async Task<ActionResult<IEnumerable<TripDTO>>> GetTrips()
         {
-            return Ok(_dbContext.Trip.ToList());
+            IEnumerable<Trip> tripList = await _tripRepository.GetAllAsync();
+            return Ok(_mapper.Map<List<TripDTO>>(tripList));
         }
         [HttpGet("{id:Guid}", Name = "GetTrip")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public ActionResult<TripDTO> GetTrip(Guid id)
+        public async Task<ActionResult<TripDTO>> GetTrip(Guid id)
         {
 
             if (id == Guid.Empty)
@@ -40,66 +47,49 @@ namespace MyTripApi.Controllers
                 return BadRequest();
             }
 
-            var trip = _dbContext.Trip.FirstOrDefault(x => x.Id == id);
+            var trip = await _tripRepository.GetAsync(x => x.Id == id);
             if (trip == null)
             {
                 return NotFound();
             }
 
-            return Ok(trip);
+            return Ok(_mapper.Map<TripDTO>(trip));
         }
 
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<TripDTO>> CreateTrip([FromBody] TripDTO tripDTO)
+        public async Task<ActionResult<TripDTO>> CreateTrip([FromBody] TripCreateDTO tripCreateDTO)
         {
-            if (_dbContext.Trip.FirstOrDefault(x => x.Name.ToLower() == tripDTO.Name.ToLower()) != null)
+            if (tripCreateDTO == null)
             {
-                ModelState.AddModelError("CustomValidation", "Trip already exists");
-                return BadRequest(ModelState);
-            }
-            if (tripDTO == null)
-            {
-                return BadRequest(tripDTO);
+                return BadRequest(tripCreateDTO);
             }
 
-            tripDTO.Id = Guid.NewGuid();
+            Trip trip = _mapper.Map<Trip>(tripCreateDTO);
 
-            Trip trip = new()
-            {
-                Id = tripDTO.Id,
-                Description = tripDTO.Description,
-                StartAt = tripDTO.StartAt,
-                EndAt = tripDTO.EndAt,
-                Name = tripDTO.Name,
-                Active = tripDTO.Active
-            };
+            await _tripRepository.CreateAsync(trip);
 
-            await _dbContext.Trip.AddAsync(trip);
-            await _dbContext.SaveChangesAsync();
-
-            return CreatedAtRoute("GetTrip", new { id = tripDTO.Id }, tripDTO);
+            return CreatedAtRoute("GetTrip", new { id = trip.Id }, trip);
         }
 
         [HttpDelete("{id:Guid}", Name = "DeleteTrip")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult DeleteTrip(Guid id)
+        public async Task<IActionResult> DeleteTrip(Guid id)
         {
             if (id == Guid.Empty)
             {
                 return BadRequest();
             }
 
-            var trip = _dbContext.Trip.FirstOrDefault(x => x.Id == id);
+            var trip = await _tripRepository.GetAsync(x => x.Id == id);
             if (trip == null)
             {
                 return NotFound();
             }
-            _dbContext.Trip.Remove(trip);
-            _dbContext.SaveChanges();
+            await _tripRepository.RemoveAsync(trip);
             return NoContent();
         }
 
@@ -107,24 +97,15 @@ namespace MyTripApi.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult UpdateTrip(Guid id, [FromBody] TripDTO tripDTO)
+        public async Task<IActionResult> UpdateTrip(Guid id, [FromBody] TripUpdateDTO tripUpdateDTO)
         {
-            if (tripDTO == null || tripDTO.Id != id)
+            if (tripUpdateDTO == null || tripUpdateDTO.Id != id)
             {
                 return BadRequest();
             }
 
-            Trip trip = new()
-            {
-                Name = tripDTO.Name,
-                UpdatedAt = DateTime.UtcNow,
-                Description = tripDTO.Description,
-                Active = tripDTO.Active,
-                StartAt = tripDTO.StartAt,
-                EndAt = tripDTO.EndAt,
-            };
-            _dbContext.Update(trip);
-            _dbContext.SaveChanges();
+            Trip trip = _mapper.Map<Trip>(tripUpdateDTO);
+            await _tripRepository.UpdateAsync(trip);
 
             return NoContent();
         }
@@ -133,44 +114,29 @@ namespace MyTripApi.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult UpdatePartialTrip(Guid id, JsonPatchDocument<TripDTO> patchTripDTO)
+        public async Task<IActionResult> UpdatePartialTrip(Guid id, JsonPatchDocument<TripUpdateDTO> patchTripDTO)
         {
             if (patchTripDTO == null || id == Guid.Empty)
             {
                 return BadRequest();
             }
 
-            var trip = _dbContext.Trip.FirstOrDefault(x => x.Id == id);
+            var trip = await _tripRepository.GetAsync(x => x.Id == id, tracked: false);
             if (trip == null)
             {
                 return NotFound();
             }
-            TripDTO tripDTO = new()
-            {
-                Name = trip.Name,                
-                Description = trip.Description,
-                Active = trip.Active,
-                StartAt = trip.StartAt,
-                EndAt = trip.EndAt,
-            };
+            TripUpdateDTO tripUpdateDTO = _mapper.Map<TripUpdateDTO>(trip);
 
-            patchTripDTO.ApplyTo(tripDTO, ModelState);
+            patchTripDTO.ApplyTo(tripUpdateDTO, ModelState);
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
+            Trip tripModel = _mapper.Map<Trip>(tripUpdateDTO);
 
-            Trip tripModel = new()
-            {
-                Name = tripDTO.Name,
-                UpdatedAt = DateTime.UtcNow,
-                Description = tripDTO.Description,
-                Active = tripDTO.Active,
-                StartAt = tripDTO.StartAt,
-                EndAt = tripDTO.EndAt,
-            };
-            _dbContext.Update(tripModel);
-            _dbContext.SaveChanges();
+            await _tripRepository.UpdateAsync(tripModel);
+            
             return NoContent();
         }
     }
