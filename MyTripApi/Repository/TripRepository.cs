@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MyTApi.Repository;
 using MyTripApi.Data;
-using MyTripApi.Models;
+using MyTripApi.Models.Entities;
 using MyTripApi.Repository.IRepository;
 using System.Linq.Expressions;
 

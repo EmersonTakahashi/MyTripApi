@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
-using MyTripApi.Models;
 using MyTripApi.Models.Dto.Trip;
+using MyTripApi.Models.Entities;
 
 namespace MyTripApi
 {

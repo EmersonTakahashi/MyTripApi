@@ -138,7 +138,7 @@ namespace MyTripApi.Controllers
                 {
                     _response.IsSuccess = false;
                     _response.StatusCode = HttpStatusCode.NotFound;
-                    return NotFound(_response;
+                    return NotFound(_response);
                 }
                 await _tripRepository.RemoveAsync(trip);
 
