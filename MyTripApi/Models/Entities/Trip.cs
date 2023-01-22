@@ -1,10 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace MyTripApi.Models
+namespace MyTripApi.Models.Entities
 {
     public class Trip
     {
-        public Guid Id { get; set; }        
+        public Guid Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
         public DateTime? StartAt { get; set; }

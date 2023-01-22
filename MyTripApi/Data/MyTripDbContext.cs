@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using MyTripApi.Models;
+using MyTripApi.Models.Entities;
 
 namespace MyTripApi.Data
 {
