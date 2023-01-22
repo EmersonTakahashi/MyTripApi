@@ -10,7 +10,5 @@ namespace MyTripApi.Data
         }
 
         public DbSet<Trip> Trip { get; set; }
-
-
     }
 }

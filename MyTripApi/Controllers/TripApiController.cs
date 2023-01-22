@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using MyTripApi.Data;
 using MyTripApi.Models;
 using MyTripApi.Models.Dto;
@@ -12,32 +13,35 @@ namespace MyTripApi.Controllers
     public class TripApiController : ControllerBase
     {
         private readonly ILogger<TripApiController> _logger;
+        private readonly MyTripDbContext _dbContext;
 
-        public TripApiController(ILogger<TripApiController> logger)
+        public TripApiController(ILogger<TripApiController> logger, MyTripDbContext dbContext)
         {
             _logger = logger;
+            _dbContext = dbContext;
         }
 
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public ActionResult<IEnumerable<TripDTO>> GetTrips()
         {
-            return Ok(TripStore.tripList);
+            return Ok(_dbContext.Trip.ToList());
         }
-        [HttpGet("{id:Guid}",Name ="GetTrip")]
+        [HttpGet("{id:Guid}", Name = "GetTrip")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public ActionResult<TripDTO> GetTrip(Guid id) {
+        public ActionResult<TripDTO> GetTrip(Guid id)
+        {
 
-            if(id == Guid.Empty)
+            if (id == Guid.Empty)
             {
                 _logger.LogError($"Get Trip Error with id: {id}");
                 return BadRequest();
             }
 
-            var trip = TripStore.tripList.FirstOrDefault(x => x.Id == id);
-            if(trip == null)
+            var trip = _dbContext.Trip.FirstOrDefault(x => x.Id == id);
+            if (trip == null)
             {
                 return NotFound();
             }
@@ -48,23 +52,34 @@ namespace MyTripApi.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public ActionResult<TripDTO> CreateTrip([FromBody]TripDTO tripDTO)
+        public async Task<ActionResult<TripDTO>> CreateTrip([FromBody] TripDTO tripDTO)
         {
-            if(TripStore.tripList.FirstOrDefault(x => x.Name.ToLower() == tripDTO.Name.ToLower()) != null)
+            if (_dbContext.Trip.FirstOrDefault(x => x.Name.ToLower() == tripDTO.Name.ToLower()) != null)
             {
                 ModelState.AddModelError("CustomValidation", "Trip already exists");
                 return BadRequest(ModelState);
             }
-            if(tripDTO == null)
+            if (tripDTO == null)
             {
                 return BadRequest(tripDTO);
             }
 
-            tripDTO.Id = Guid.NewGuid();    
+            tripDTO.Id = Guid.NewGuid();
 
-            TripStore.tripList.Add(tripDTO);
+            Trip trip = new()
+            {
+                Id = tripDTO.Id,
+                Description = tripDTO.Description,
+                StartAt = tripDTO.StartAt,
+                EndAt = tripDTO.EndAt,
+                Name = tripDTO.Name,
+                Active = tripDTO.Active
+            };
 
-            return CreatedAtRoute("GetTrip", new { id = tripDTO.Id}, tripDTO); 
+            await _dbContext.Trip.AddAsync(trip);
+            await _dbContext.SaveChangesAsync();
+
+            return CreatedAtRoute("GetTrip", new { id = tripDTO.Id }, tripDTO);
         }
 
         [HttpDelete("{id:Guid}", Name = "DeleteTrip")]
@@ -73,17 +88,18 @@ namespace MyTripApi.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult DeleteTrip(Guid id)
         {
-            if(id == Guid.Empty)
+            if (id == Guid.Empty)
             {
                 return BadRequest();
             }
 
-            var trip = TripStore.tripList.FirstOrDefault(x => x.Id == id);
+            var trip = _dbContext.Trip.FirstOrDefault(x => x.Id == id);
             if (trip == null)
             {
                 return NotFound();
             }
-            TripStore.tripList.Remove(trip);
+            _dbContext.Trip.Remove(trip);
+            _dbContext.SaveChanges();
             return NoContent();
         }
 
@@ -91,21 +107,24 @@ namespace MyTripApi.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult UpdateTrip(Guid id, [FromBody]TripDTO tripDTO)
+        public IActionResult UpdateTrip(Guid id, [FromBody] TripDTO tripDTO)
         {
-            if(tripDTO == null || tripDTO.Id != id)
+            if (tripDTO == null || tripDTO.Id != id)
             {
-                return BadRequest();   
+                return BadRequest();
             }
 
-            var trip = TripStore.tripList.FirstOrDefault(x => x.Id == id);
-            if (trip == null)
+            Trip trip = new()
             {
-                return NotFound();
-            }
-
-            trip.Name = tripDTO.Name;
-            trip.UpdatedAt = DateTime.UtcNow;
+                Name = tripDTO.Name,
+                UpdatedAt = DateTime.UtcNow,
+                Description = tripDTO.Description,
+                Active = tripDTO.Active,
+                StartAt = tripDTO.StartAt,
+                EndAt = tripDTO.EndAt,
+            };
+            _dbContext.Update(trip);
+            _dbContext.SaveChanges();
 
             return NoContent();
         }
@@ -121,16 +140,37 @@ namespace MyTripApi.Controllers
                 return BadRequest();
             }
 
-            var trip = TripStore.tripList.FirstOrDefault(x => x.Id == id);
+            var trip = _dbContext.Trip.FirstOrDefault(x => x.Id == id);
             if (trip == null)
             {
                 return NotFound();
             }
-            patchTripDTO.ApplyTo(trip, ModelState);
+            TripDTO tripDTO = new()
+            {
+                Name = trip.Name,                
+                Description = trip.Description,
+                Active = trip.Active,
+                StartAt = trip.StartAt,
+                EndAt = trip.EndAt,
+            };
+
+            patchTripDTO.ApplyTo(tripDTO, ModelState);
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
+
+            Trip tripModel = new()
+            {
+                Name = tripDTO.Name,
+                UpdatedAt = DateTime.UtcNow,
+                Description = tripDTO.Description,
+                Active = tripDTO.Active,
+                StartAt = tripDTO.StartAt,
+                EndAt = tripDTO.EndAt,
+            };
+            _dbContext.Update(tripModel);
+            _dbContext.SaveChanges();
             return NoContent();
         }
     }

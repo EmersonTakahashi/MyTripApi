@@ -5,6 +5,9 @@ using MyTripApi.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Configuration.AddJsonFile($"appsettings.json");
+builder.Configuration.AddJsonFile($"appsettings.Development.json");
+
 // Add services to the container.
 builder.Services.AddDbContext<MyTripDbContext>(option =>
 {
