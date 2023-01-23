@@ -1,7 +1,7 @@
 ﻿using MyTripApi.Models;
 using System.Linq.Expressions;
 
-namespace MyTripApi.Repository
+namespace MyTripApi.Repository.IRepository
 {
     public interface IRepositoryBase<T> where T : class
     {

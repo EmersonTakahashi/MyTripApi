@@ -4,7 +4,8 @@ namespace MyTripApi.Models.Entities
 {
     public class Trip
     {
-        public Guid Id { get; set; }
+        [Key]
+        public Guid Id { get; set; } = Guid.NewGuid();
         public string Name { get; set; }
         public string? Description { get; set; }
         public DateTime? StartAt { get; set; }

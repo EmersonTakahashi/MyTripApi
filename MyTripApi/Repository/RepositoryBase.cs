@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MyTripApi.Data;
-using MyTripApi.Repository;
+using MyTripApi.Repository.IRepository;
 using System.Linq.Expressions;
 
 namespace MyTApi.Repository

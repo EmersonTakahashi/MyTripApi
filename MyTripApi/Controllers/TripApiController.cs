@@ -32,6 +32,7 @@ namespace MyTripApi.Controllers
         }
 
         [HttpGet]
+        [Route("trips")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult<APIResponse>> GetTrips()
         {
@@ -50,7 +51,8 @@ namespace MyTripApi.Controllers
             }
             return _response;
         }
-        [HttpGet("{id:Guid}", Name = "GetTrip")]
+        [HttpGet]
+        [Route("trips/{id:Guid}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -88,6 +90,7 @@ namespace MyTripApi.Controllers
         }
 
         [HttpPost]
+        [Route("trips")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<APIResponse>> CreateTrip([FromBody] TripCreateDTO tripCreateDTO)
@@ -108,7 +111,7 @@ namespace MyTripApi.Controllers
                 _response.Result = _mapper.Map<TripDTO>(trip);
                 _response.StatusCode = HttpStatusCode.Created;
                 _response.IsSuccess = true;
-                return CreatedAtRoute("GetTrip", new { id = trip.Id }, _response);
+                return Ok(_response);
             }
             catch (Exception ex)
             {
@@ -118,8 +121,9 @@ namespace MyTripApi.Controllers
             return _response;
         }
 
-        [HttpDelete("{id:Guid}", Name = "DeleteTrip")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [HttpDelete]
+        [Route("trips/{id:Guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<APIResponse>> DeleteTrip(Guid id)
@@ -140,7 +144,9 @@ namespace MyTripApi.Controllers
                     _response.StatusCode = HttpStatusCode.NotFound;
                     return NotFound(_response);
                 }
-                await _tripRepository.RemoveAsync(trip);
+
+                trip.Active = false;
+                await _tripRepository.UpdateAsync(trip);
 
                 _response.StatusCode = HttpStatusCode.NoContent;
                 _response.IsSuccess = true;
@@ -155,8 +161,9 @@ namespace MyTripApi.Controllers
             return _response;
         }
 
-        [HttpPut("{id:Guid}", Name = "UpdateTrip")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [HttpPut]
+        [Route("trips/{id:Guid}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<APIResponse>> UpdateTrip(Guid id, [FromBody] TripUpdateDTO tripUpdateDTO)
@@ -186,36 +193,5 @@ namespace MyTripApi.Controllers
             return _response;
         }
 
-
-        //It will probably not used right now
-        [HttpPatch("{id:Guid}", Name = "UpdatePartialTrip")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> UpdatePartialTrip(Guid id, JsonPatchDocument<TripUpdateDTO> patchTripDTO)
-        {
-            if (patchTripDTO == null || id == Guid.Empty)
-            {
-                return BadRequest();
-            }
-
-            var trip = await _tripRepository.GetAsync(x => x.Id == id, tracked: false);
-            if (trip == null)
-            {
-                return NotFound();
-            }
-            TripUpdateDTO tripUpdateDTO = _mapper.Map<TripUpdateDTO>(trip);
-
-            patchTripDTO.ApplyTo(tripUpdateDTO, ModelState);
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-            Trip tripModel = _mapper.Map<Trip>(tripUpdateDTO);
-
-            await _tripRepository.UpdateAsync(tripModel);
-
-            return NoContent();
-        }
     }
 }
