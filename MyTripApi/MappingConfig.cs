@@ -11,6 +11,10 @@ namespace MyTripApi
             CreateMap<Trip, TripDTO>().ReverseMap();
             CreateMap<Trip, TripCreateDTO>().ReverseMap();
             CreateMap<Trip, TripUpdateDTO>().ReverseMap();
+
+            CreateMap<ToDoBeforeTrip, ToDoBeforeTripDTO>().ReverseMap();
+            CreateMap<ToDoBeforeTrip, ToDoBeforeTripCreateDTO>().ReverseMap();
+            CreateMap<ToDoBeforeTrip, ToDoBeforeTripUpdateDTO>().ReverseMap();
         }
     }
 }

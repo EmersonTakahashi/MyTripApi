@@ -18,6 +18,7 @@ builder.Services.AddDbContext<MyTripDbContext>(option =>
 });
 
 builder.Services.AddScoped<ITripRepository, TripRepository>();
+builder.Services.AddScoped<IToDoBeforeTripRepository, ToDoBeforeTripRepository>();
 
 builder.Services.AddAutoMapper(typeof(MappingConfig));
 
