@@ -38,7 +38,7 @@ namespace MyTripApi.Controllers
         {
             try
             {
-                IEnumerable<Trip> tripList = await _tripRepository.GetAllAsync();
+                IEnumerable<Trip> tripList = await _tripRepository.GetAllAsync(x => x.Active == true);
                 _response.Result = _mapper.Map<List<TripDTO>>(tripList);
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;
@@ -68,7 +68,7 @@ namespace MyTripApi.Controllers
                     return BadRequest(_response);
                 }
 
-                var trip = await _tripRepository.GetAsync(x => x.Id == id);
+                var trip = await _tripRepository.GetAsync(x => x.Active == true && x.Id == id);
                 if (trip == null)
                 {
                     _response.IsSuccess = false;
@@ -137,7 +137,7 @@ namespace MyTripApi.Controllers
                     return BadRequest(_response);
                 }
 
-                var trip = await _tripRepository.GetAsync(x => x.Id == id);
+                var trip = await _tripRepository.GetAsync(x => x.Active == true && x.Id == id);
                 if (trip == null)
                 {
                     _response.IsSuccess = false;
@@ -176,6 +176,14 @@ namespace MyTripApi.Controllers
                     _response.StatusCode = HttpStatusCode.BadRequest;
                     return BadRequest(_response);
                 }
+
+                if (await _tripRepository.GetAsync(x => x.Active == true && x.Id == id) == null)
+                {
+                    _response.IsSuccess = false;
+                    _response.StatusCode = HttpStatusCode.NotFound;
+                    return NotFound(_response);
+                }
+
 
                 Trip trip = _mapper.Map<Trip>(tripUpdateDTO);
                 await _tripRepository.UpdateAsync(trip);

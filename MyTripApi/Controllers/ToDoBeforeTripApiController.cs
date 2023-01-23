@@ -40,7 +40,7 @@ namespace MyTripApi.Controllers
         {
             try
             {
-                IEnumerable<ToDoBeforeTrip> tripList = await _toDoBeforeTripRepository.GetAllAsync();
+                IEnumerable<ToDoBeforeTrip> tripList = await _toDoBeforeTripRepository.GetAllAsync(x => x.Active == true);
                 _response.Result = _mapper.Map<List<ToDoBeforeTripDTO>>(tripList);
                 _response.StatusCode = HttpStatusCode.OK;
                 _response.IsSuccess = true;
@@ -70,7 +70,7 @@ namespace MyTripApi.Controllers
                     return BadRequest(_response);
                 }
 
-                var toDoBeforeTrip = await _toDoBeforeTripRepository.GetAsync(x => x.Id == id);
+                var toDoBeforeTrip = await _toDoBeforeTripRepository.GetAsync(x => x.Active == true && x.Id == id);
                 if (toDoBeforeTrip == null)
                 {
                     _response.IsSuccess = false;
@@ -106,7 +106,7 @@ namespace MyTripApi.Controllers
                     return BadRequest(_response);
                 }
 
-                if(await _tripRepository.GetAsync(x => x.Id == toDoBeforeTripCreateDTO.TripId) == null)
+                if(await _tripRepository.GetAsync(x => x.Active == true && x.Id == toDoBeforeTripCreateDTO.TripId) == null)
                 {
                     ModelState.AddModelError("CustomError", "TripId is invalid!");
                     _response.IsSuccess = false;
@@ -147,7 +147,7 @@ namespace MyTripApi.Controllers
                     return BadRequest(_response);
                 }
 
-                var toDoBeforeTrip = await _toDoBeforeTripRepository.GetAsync(x => x.Id == id);
+                var toDoBeforeTrip = await _toDoBeforeTripRepository.GetAsync(x => x.Active == true && x.Id == id);
                 if (toDoBeforeTrip == null)
                 {
                     _response.IsSuccess = false;
@@ -187,8 +187,15 @@ namespace MyTripApi.Controllers
                     _response.StatusCode = HttpStatusCode.BadRequest;
                     return BadRequest(_response);
                 }
+                                
+                if (await _toDoBeforeTripRepository.GetAsync(x => x.Active == true && x.Id == id) == null)
+                {
+                    _response.IsSuccess = false;
+                    _response.StatusCode = HttpStatusCode.NotFound;
+                    return NotFound(_response);
+                }
 
-                if (await _tripRepository.GetAsync(x => x.Id == toDoBeforeTripUpdateDTO.TripId) == null)
+                if (await _tripRepository.GetAsync(x => x.Active == true && x.Id == toDoBeforeTripUpdateDTO.TripId) == null)
                 {
                     ModelState.AddModelError("CustomError", "TripId is invalid!");
                     _response.IsSuccess = false;
