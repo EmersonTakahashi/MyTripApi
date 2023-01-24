@@ -22,6 +22,7 @@ namespace MyTApi.Repository
 
         public async Task<T?> GetAsync(Expression<Func<T, bool>> filter, bool tracked = true)
         {
+            //todo: test if this generic type can be nullable
             IQueryable<T> query = dbSet;
 
             if (!tracked)
