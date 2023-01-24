@@ -7,7 +7,7 @@ namespace MyTripApi.Models.Entities
     {
         [Key]
         public Guid Id { get; set; } = Guid.NewGuid();
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
         public bool Active { get; set; } = true;
         public DateTime? ToDoUntil { get; set; }
@@ -17,6 +17,6 @@ namespace MyTripApi.Models.Entities
         //ForeignKey
         [ForeignKey("Trip")]
         public Guid TripId { get; set; }
-        public Trip Trip { get; set; }
+        public Trip? Trip { get; set; }
     }
 }

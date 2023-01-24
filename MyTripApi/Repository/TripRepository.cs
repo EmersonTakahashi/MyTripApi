@@ -15,7 +15,7 @@ namespace MyTripApi.Repository
             _dbContext = dbContext;
         }
     
-        public async Task<Trip> UpdateAsync(Trip trip)
+        public new async Task<Trip> UpdateAsync(Trip trip)
         {
             trip.UpdatedAt = DateTime.UtcNow;
             _dbContext.Trip.Update(trip);

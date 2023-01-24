@@ -20,7 +20,7 @@ namespace MyTApi.Repository
             await SaveAsync();
         }
 
-        public async Task<T> GetAsync(Expression<Func<T, bool>> filter = null, bool tracked = true)
+        public async Task<T?> GetAsync(Expression<Func<T, bool>> filter, bool tracked = true)
         {
             IQueryable<T> query = dbSet;
 
