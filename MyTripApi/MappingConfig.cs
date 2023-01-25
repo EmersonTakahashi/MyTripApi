@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
+using MyTripApi.Data;
 using MyTripApi.Models.Dto.Trip;
+using MyTripApi.Models.Dto.User;
 using MyTripApi.Models.Entities;
 
 namespace MyTripApi
@@ -15,6 +17,7 @@ namespace MyTripApi
             CreateMap<ToDoBeforeTrip, ToDoBeforeTripDTO>().ReverseMap();
             CreateMap<ToDoBeforeTrip, ToDoBeforeTripCreateDTO>().ReverseMap();
             CreateMap<ToDoBeforeTrip, ToDoBeforeTripUpdateDTO>().ReverseMap();
+            CreateMap<ApiUser, UserDTO>().ReverseMap();
         }
     }
 }
