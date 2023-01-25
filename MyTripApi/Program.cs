@@ -3,6 +3,7 @@
 using Microsoft.EntityFrameworkCore;
 using MyTripApi;
 using MyTripApi.Data;
+using MyTripApi.Extesions;
 using MyTripApi.Repository;
 using MyTripApi.Repository.IRepository;
 
@@ -19,6 +20,9 @@ builder.Services.AddDbContext<MyTripDbContext>(option =>
 
 builder.Services.AddScoped<ITripRepository, TripRepository>();
 builder.Services.AddScoped<IToDoBeforeTripRepository, ToDoBeforeTripRepository>();
+
+builder.Services.AddAuthentication();
+builder.Services.ConfigureIdentity();
 
 builder.Services.AddAutoMapper(typeof(MappingConfig));
 
